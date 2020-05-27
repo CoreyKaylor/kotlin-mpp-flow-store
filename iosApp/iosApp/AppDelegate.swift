@@ -21,6 +21,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 }
 
 func configureStore() -> SwiftStore<AppState> {
-    SwiftStore<AppState>(initialState: AppState(profile: Profile(id: 12345, name: "Test")), reducer: SampleIosKt.defaultReducer)
+    SwiftStore<AppState>(initialState: AppState(profile: Profile(id: 12345, name: "Test", isSaving: false)), reducer: SampleIosKt.appReducer)
 }
 

@@ -8,11 +8,15 @@ struct ContentView: View {
         VStack {
             Spacer()
             Text("Hello \(store.state.profile.name) with id: \(store.state.profile.id)")
-            Button(action: {self.store.dispatch()}) {
+            Button(action: createProfile) {
                 Text("Change")
-            }
+            }.disabled(store.state.profile.isSaving)
             Spacer()
         }.background(Color.white)
+    }
+    
+    func createProfile() {
+        store.dispatch(ProfileAction.Create(name: "Changed"))
     }
 }
 

@@ -9,11 +9,12 @@ class SwiftStore<State: AnyObject> : ObservableObject {
         state = initialState
         kStore = KStore<State>(initialState: initialState, reducer: reducer)
         kStore.listen(onStateChange: { newState in
+            print(newState)
             self.state = newState
         })
     }
     
-    func dispatch() {
-        kStore.dispatch(flow: SampleIosKt.foo())
+    func dispatch(_ action: Action) {
+        kStore.dispatch(action: action)
     }
 }

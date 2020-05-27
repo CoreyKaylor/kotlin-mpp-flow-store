@@ -12,10 +12,14 @@ actual object Platform {
     actual val name: String = "iOS"
 }
 
-data class Profile(val id: Int, val name: String)
+data class Profile(val id: Int, val name: String, val isSaving: Boolean)
 data class AppState(val profile: Profile)
 
 interface Action
+
+interface FlowAction : Action {
+    fun toFlow() : Flow<Action>
+}
 
 typealias Reducer<TState> = (TState, Action) -> TState
 
@@ -24,14 +28,24 @@ open class KStore<TState:Any>(initialState: TState, private val reducer: Reducer
     private val state = MutableStateFlow(initialState)
     val currentState: StateFlow<TState> = state
 
-    fun dispatch(flow: Flow<Action>) {
+    fun dispatch(action: Action) {
         runBlocking {
-            flow.buffer().collect {
-                var current = state.value
-                var newState = reducer(current, it)
-                println("Setting state")
-                state.value = newState
+            when (action) {
+                is FlowAction -> runFlow(action.toFlow())
+                else -> runFlow(flow {
+                    emit(action)
+                })
             }
+
+        }
+    }
+
+    private suspend fun runFlow(flow: Flow<Action>) {
+        flow.buffer().collect {
+            var current = state.value
+            var newState = reducer(current, it)
+            println("Setting state")
+            state.value = newState
         }
     }
 
@@ -53,22 +67,44 @@ internal class UIScope: CoroutineScope {
         get() = dispatcher + job
 }
 
-fun defaultReducer(state: AppState, action: Action): AppState {
-    val newId = state.profile.id + 1
-    val profile = state.profile.copy(id = newId)
-    return state.copy(profile = profile)
+fun appReducer(state: AppState, action: Action): AppState {
+    return when(action) {
+        is ProfileAction -> state.copy(profile = profileReducer(state.profile, action))
+        else -> {
+            println("Unrecognized action")
+            return state
+        }
+    }
 }
 
-fun foo() : Flow<Action> = flow {
-    println("Got here")
-    emit(SimpleAction())
-    delay(3000)
-    emit(SimpleAction())
-    println("Got here")
-    delay(3000)
-    emit(SimpleAction())
-}.flowOn(Dispatchers.Default)
+private fun profileReducer(profile: Profile, action: ProfileAction): Profile {
+    return when (action) {
+        is ProfileAction.ProfileCreated -> profile.copy(id = profile.id + 1,
+            name = action.name, isSaving = false)
+        is ProfileAction.SavingProfile -> profile.copy(isSaving = true)
+        is ProfileAction.SavingProfileError -> {
+            println(action.ex)
+            return profile.copy(isSaving = false)
+        }
+    }
+}
 
-class SimpleAction : Action {
+sealed class ProfileAction : Action {
+    internal class SavingProfile : ProfileAction()
+    internal class ProfileCreated(val name: String) : ProfileAction()
+    internal class SavingProfileError(val ex: Exception) : ProfileAction()
 
+    class Create(val name: String) : FlowAction {
+        override fun toFlow() = flow {
+            try {
+                println("saving profile")
+                emit(SavingProfile())
+                delay(3000)
+                emit(ProfileCreated(name))
+                println("profile created success")
+            } catch(ex: Exception) {
+                emit(SavingProfileError(ex))
+            }
+        }.flowOn(Dispatchers.Default)
+    }
 }
