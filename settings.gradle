@@ -1,5 +1,0 @@
-rootProject.name = 'MultiPlatformPlay'
-
-include ':app'
-
-enableFeaturePreview('GRADLE_METADATA')
