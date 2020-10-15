@@ -14,7 +14,7 @@ repositories {
     jcenter()
     mavenCentral()
     maven {
-        url = uri("https://dl.bintray.com/kotlin/kotlin-eap")
+        url = uri("https://kotlin.bintray.com/kotlinx")
     }
 }
 kotlin {
@@ -33,7 +33,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(kotlin("stdlib-common"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.7-native-mt-1.4-M2")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9-native-mt")
             }
         }
         val commonTest by getting {
