@@ -8,7 +8,7 @@ class SwiftStore<State: AnyObject> : ObservableObject {
         state = initialState
         kStore = KStore<State>(initialState: initialState, reducer: reducer)
         kStore.listen(onStateChange: { newState in
-            self.state = newState
+            self.state = newState as! State
         })
     }
 

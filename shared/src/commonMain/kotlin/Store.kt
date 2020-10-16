@@ -1,6 +1,8 @@
 package com.sample
 
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 interface Action
 
@@ -10,7 +12,21 @@ interface FlowAction : Action {
 
 typealias Reducer<TState> = (TState, Action) -> TState
 
-expect class KStore<TState:Any> {
+class KStore<TState:Any>(initialState: TState, private val reducer: Reducer<TState>) {
+    internal val stateFlow = MutableStateFlow(initialState)
+
+    fun dispatch(action: Action) = GlobalScope.launch {
+        val actionFlow = when (action) {
+            is FlowAction -> action.toFlow()
+            else -> flow<Action> { emit(action) }
+        }
+        actionFlow.map {
+            reducer(stateFlow.value, it)
+        }.collect {
+            stateFlow.value = it
+        }
+    }
+
     val state: TState
-    fun dispatch(action: Action)
+        get() = stateFlow.value
 }
